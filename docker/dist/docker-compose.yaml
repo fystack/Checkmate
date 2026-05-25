@@ -8,15 +8,14 @@ services:
     env_file:
       - .env.client
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:2345:80"
     depends_on:
       - server
   server:
     image: ghcr.io/bluewave-labs/checkmate-backend:latest
     restart: always
-    ports:
-      - "52345:52345"
+    expose:
+      - "52345"
     depends_on:
       - mongodb
     env_file:
