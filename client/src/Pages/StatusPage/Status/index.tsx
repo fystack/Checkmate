@@ -61,6 +61,19 @@ const THEME_CONFIGS: Record<StatusPageTheme, ThemeConfig<any>> = {
 	},
 };
 
+const STATUS_PAGE_DOMAIN = import.meta.env.VITE_APP_STATUS_PAGE_DOMAIN;
+const STATUS_PAGE_SLUG = import.meta.env.VITE_APP_STATUS_PAGE_SLUG;
+const isConfiguredValue = (value: string | undefined): value is string =>
+	Boolean(value && !value.startsWith("UPTIME_APP_"));
+const resolveConfiguredHostname = (value: string | undefined) => {
+	if (!isConfiguredValue(value)) return null;
+	try {
+		return new URL(value.includes("://") ? value : `https://${value}`).hostname;
+	} catch {
+		return value;
+	}
+};
+
 const StatusPageView = () => {
 	const theme = useTheme();
 	const { t } = useTranslation();
@@ -68,9 +81,19 @@ const StatusPageView = () => {
 	const isAdmin = useIsAdmin();
 	const location = useLocation();
 
-	const isPublic = location.pathname.startsWith(PUBLIC_STATUS_PAGE_PREFIX);
+	const statusPageHostname = resolveConfiguredHostname(STATUS_PAGE_DOMAIN);
+	const isDedicatedStatusDomain =
+		Boolean(statusPageHostname) &&
+		isConfiguredValue(STATUS_PAGE_SLUG) &&
+		window.location.hostname === statusPageHostname;
+	const statusPageUrl = url ?? (isDedicatedStatusDomain ? STATUS_PAGE_SLUG : undefined);
+	const isPublic =
+		location.pathname.startsWith(PUBLIC_STATUS_PAGE_PREFIX) ||
+		isDedicatedStatusDomain;
 
-	const apiUrl = url ? `/status-page/${url}?type=uptime&type=infrastructure` : null;
+	const apiUrl = statusPageUrl
+		? `/status-page/${statusPageUrl}?type=uptime&type=infrastructure`
+		: null;
 
 	const { data, isLoading, error } = useGet<StatusPageResponse>(
 		apiUrl,
@@ -173,7 +196,7 @@ const StatusPageView = () => {
 							{t("pages.statusPages.details.empty.title")}
 						</Typography>
 						{isAdmin && (
-							<Link to={`/status/configure/${url}`}>
+							<Link to={`/status/configure/${statusPageUrl}`}>
 								{t("pages.statusPages.details.empty.addMonitor")}
 							</Link>
 						)}

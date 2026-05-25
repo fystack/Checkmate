@@ -55,7 +55,46 @@ import { ProtectedRoute, RoleProtectedRoute } from "@/Components/routing/RoutePr
 
 import CreateMonitor from "@/Pages/CreateMonitor";
 
+const STATUS_PAGE_DOMAIN = import.meta.env.VITE_APP_STATUS_PAGE_DOMAIN;
+const STATUS_PAGE_SLUG = import.meta.env.VITE_APP_STATUS_PAGE_SLUG;
+const isConfiguredValue = (value: string | undefined): value is string =>
+	Boolean(value && !value.startsWith("UPTIME_APP_"));
+const resolveConfiguredHostname = (value: string | undefined) => {
+	if (!isConfiguredValue(value)) return null;
+	try {
+		return new URL(value.includes("://") ? value : `https://${value}`).hostname;
+	} catch {
+		return value;
+	}
+};
+
 const Routes = () => {
+	const statusPageHostname = resolveConfiguredHostname(STATUS_PAGE_DOMAIN);
+	const isDedicatedStatusDomain =
+		Boolean(statusPageHostname) &&
+		isConfiguredValue(STATUS_PAGE_SLUG) &&
+		window.location.hostname === statusPageHostname;
+
+	if (isDedicatedStatusDomain) {
+		return (
+			<LibRoutes>
+				<Route
+					path="/"
+					element={<Status />}
+				/>
+				<Route
+					path="*"
+					element={
+						<Navigate
+							to="/"
+							replace
+						/>
+					}
+				/>
+			</LibRoutes>
+		);
+	}
+
 	return (
 		<LibRoutes>
 			<Route
