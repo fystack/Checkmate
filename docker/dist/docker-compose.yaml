@@ -5,9 +5,8 @@ services:
       context: ../..
       dockerfile: docker/dist/client.Dockerfile
     restart: always
-    environment:
-      UPTIME_APP_API_BASE_URL: "http://localhost:52345/api/v1"
-      UPTIME_APP_CLIENT_HOST: "http://localhost"
+    env_file:
+      - .env.client
     ports:
       - "80:80"
       - "443:443"
@@ -20,10 +19,8 @@ services:
       - "52345:52345"
     depends_on:
       - mongodb
-    environment:
-      - DB_CONNECTION_STRING=mongodb://mongodb:27017/uptime_db
-      - CLIENT_HOST=http://localhost
-      - JWT_SECRET=my_secret
+    env_file:
+      - .env.server
     # volumes:
     # - /var/run/docker.sock:/var/run/docker.sock:ro
   mongodb:
