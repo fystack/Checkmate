@@ -1,10 +1,8 @@
 import Box from "@mui/material/Box";
-import { useTranslation } from "react-i18next";
 import type { SlotProps } from "@/Pages/StatusPage/Status/themes/shared/BaseStatusPage";
 import type { BoldStyles } from "@/Pages/StatusPage/Status/themes/bold/styles";
 
-export const BoldHero = ({ overall, monitorCount, styles }: SlotProps<BoldStyles>) => {
-	const { t } = useTranslation();
+export const BoldHero = ({ overall, styles }: SlotProps<BoldStyles>) => {
 	return (
 		<Box sx={styles.hero}>
 			<Box
@@ -18,14 +16,6 @@ export const BoldHero = ({ overall, monitorCount, styles }: SlotProps<BoldStyles
 					{overall.icon}
 				</Box>
 				{overall.message}
-			</Box>
-			<Box
-				component="p"
-				sx={styles.heroSub}
-			>
-				{t("pages.statusPages.statusBar.monitoringSummary", {
-					count: monitorCount,
-				})}
 			</Box>
 		</Box>
 	);

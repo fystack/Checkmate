@@ -1,4 +1,6 @@
 import type { SxProps, Theme } from "@mui/material/styles";
+import { MAX_RECENT_CHECKS } from "@/Types/Monitor";
+import type { StatusPage } from "@/Types/StatusPage";
 import type { StatusPageThemeTokens } from "../tokens";
 import { type OverallTone, toneColor, toneSoft } from "../shared/overallStatus";
 import { MONO_STACK, SANS_STACK } from "../shared/fontStacks";
@@ -6,7 +8,6 @@ import { MONO_STACK, SANS_STACK } from "../shared/fontStacks";
 export type RefinedHeatCell = "fast" | "med" | "slow" | "down" | "empty";
 export type RefinedBarKind = "up" | "down" | "empty";
 export type RefinedGaugeFill = "ok" | "warm" | "hot";
-import { MAX_RECENT_CHECKS } from "@/Types/Monitor";
 
 export interface RefinedStyles {
 	page: SxProps<Theme>;
@@ -50,9 +51,11 @@ export interface RefinedStyles {
 	footer: SxProps<Theme>;
 }
 
-const cardShadow = "0 1px 2px rgba(10, 16, 32, 0.06), 0 6px 18px rgba(10, 16, 32, 0.08)";
+const defaultAccent = "#4e7eea";
+
+const cardShadow = "0 1px 2px rgba(17, 24, 39, 0.04), 0 10px 26px rgba(46, 64, 96, 0.07)";
 const cardShadowHover =
-	"0 2px 4px rgba(16, 24, 40, 0.06), 0 10px 24px rgba(16, 24, 40, 0.06)";
+	"0 2px 6px rgba(17, 24, 39, 0.05), 0 16px 34px rgba(46, 64, 96, 0.1)";
 
 const pillBase = {
 	fontSize: 10,
@@ -63,10 +66,22 @@ const pillBase = {
 	fontWeight: 600,
 };
 
+const resolveAccent = (color: string | undefined) =>
+	/^#(?:[0-9a-fA-F]{3}){1,2}$/.test(color ?? "") ? color : defaultAccent;
+
 export const refinedStyles = (
 	tokens: StatusPageThemeTokens,
-	_isDark: boolean
+	_isDark: boolean,
+	statusPage?: StatusPage
 ): RefinedStyles => {
+	const accent = resolveAccent(statusPage?.color);
+	const accentSoft = _isDark
+		? `color-mix(in srgb, ${accent} 18%, ${tokens.surface} 82%)`
+		: `color-mix(in srgb, ${accent} 12%, #ffffff 88%)`;
+	const accentBorder = _isDark
+		? `color-mix(in srgb, ${accent} 36%, ${tokens.border} 64%)`
+		: `color-mix(in srgb, ${accent} 28%, #ffffff 72%)`;
+
 	const heatCellBg: Record<RefinedHeatCell, string> = {
 		fast: tokens.up,
 		med: `color-mix(in srgb, ${tokens.up} 60%, #ffffff 40%)`,
@@ -90,101 +105,127 @@ export const refinedStyles = (
 	return {
 		page: {
 			flex: "1 0 auto",
-			maxWidth: 960,
+			maxWidth: 1040,
 			width: "100%",
 			mx: "auto",
-			p: "48px 20px 80px",
+			p: { xs: "32px 16px 64px", sm: "48px 24px 80px" },
 			fontFamily: SANS_STACK,
 			fontSize: 14,
 			lineHeight: 1.5,
 			color: tokens.text,
 			WebkitFontSmoothing: "antialiased",
+			position: "relative",
+			"&::before": {
+				content: '""',
+				position: "fixed",
+				top: 0,
+				left: 0,
+				right: 0,
+				height: "3px",
+				background: `linear-gradient(90deg, ${accent} 0%, ${tokens.up} 100%)`,
+				pointerEvents: "none",
+			},
 		},
 
 		top: {
 			display: "flex",
 			alignItems: "center",
 			justifyContent: "space-between",
-			mb: "28px",
+			mb: "30px",
 		},
 		brand: {
 			display: "flex",
 			alignItems: "center",
-			gap: "10px",
-			fontWeight: 600,
-			letterSpacing: "-0.01em",
+			gap: "12px",
+			fontWeight: 700,
 			color: tokens.text,
 		},
 		logoMono: {
-			width: 28,
-			height: 28,
-			borderRadius: "8px",
-			background: tokens.up,
+			width: 34,
+			height: 34,
+			borderRadius: "10px",
+			background: accent,
 			display: "grid",
 			placeItems: "center",
 			color: "#fff",
 			fontWeight: 700,
-			fontSize: 13,
+			fontSize: 14,
+			boxShadow: `0 8px 18px color-mix(in srgb, ${accent} 24%, transparent)`,
 		},
-		logoImg: { maxHeight: 32, maxWidth: 120, objectFit: "contain" },
-		company: { fontSize: 14 },
+		logoImg: { maxHeight: 42, maxWidth: 160, objectFit: "contain" },
+		company: { fontSize: 15, lineHeight: 1.2 },
 
 		hero: {
 			background: tokens.surface,
 			border: `1px solid ${tokens.border}`,
 			borderRadius: tokens.radius,
-			padding: "22px 24px",
+			padding: { xs: "20px", sm: "24px 28px" },
 			display: "flex",
 			alignItems: "center",
-			gap: "16px",
+			gap: "18px",
 			boxShadow: cardShadow,
-			mb: "20px",
+			mb: "24px",
+			position: "relative",
+			overflow: "hidden",
+			"&::before": {
+				content: '""',
+				position: "absolute",
+				top: 0,
+				left: 0,
+				bottom: 0,
+				width: "5px",
+				background: accent,
+			},
 		},
 		statusDot: (tone) => ({
-			width: 10,
-			height: 10,
+			width: 12,
+			height: 12,
 			borderRadius: "50%",
 			background: toneColor(tone, tokens),
 			boxShadow: `0 0 0 4px ${toneSoft(tone, tokens)}`,
 			flexShrink: 0,
+			ml: "2px",
 		}),
 		statusCopy: { flex: 1, minWidth: 0 },
 		heroTitle: {
 			m: 0,
 			mb: "2px",
-			fontSize: 17,
-			fontWeight: 600,
-			letterSpacing: "-0.01em",
+			fontSize: { xs: 18, sm: 20 },
+			fontWeight: 700,
 			color: tokens.text,
 		},
-		heroSub: { m: 0, color: tokens.textMuted, fontSize: 13 },
+		heroSub: { m: 0, color: tokens.textMuted, fontSize: 14, fontWeight: 500 },
 		heroIcon: (tone) => ({
 			color: toneColor(tone, tokens),
 			display: "flex",
 			alignItems: "center",
+			background: toneSoft(tone, tokens),
+			borderRadius: "999px",
+			p: "5px",
 		}),
 
-		chartSwitchWrap: { display: "flex", justifyContent: "flex-end", mb: "12px" },
+		chartSwitchWrap: { display: "flex", justifyContent: "flex-end", mb: "16px" },
 		chartSwitch: {
 			display: "inline-flex",
 			border: `1px solid ${tokens.border}`,
 			borderRadius: "8px",
 			background: tokens.surface,
-			p: "3px",
+			p: "4px",
 			gap: "2px",
+			boxShadow: "0 1px 2px rgba(17, 24, 39, 0.04)",
 		},
 		chartSwitchButton: (active) => ({
 			border: 0,
-			background: active ? tokens.upSoft : "transparent",
+			background: active ? accentSoft : "transparent",
 			fontFamily: "inherit",
-			fontSize: 11,
-			padding: "5px 14px",
+			fontSize: 12,
+			padding: "6px 16px",
 			cursor: "pointer",
-			color: active ? tokens.up : tokens.textMuted,
+			color: active ? accent : tokens.textMuted,
 			borderRadius: "5px",
 			transition: "background 0.15s ease, color 0.15s ease",
-			fontWeight: active ? 600 : 500,
-			"&:hover": { color: active ? tokens.up : tokens.text },
+			fontWeight: active ? 700 : 600,
+			"&:hover": { color: active ? accent : tokens.text },
 		}),
 
 		monitorList: {
@@ -193,7 +234,7 @@ export const refinedStyles = (
 			p: 0,
 			display: "flex",
 			flexDirection: "column",
-			gap: "12px",
+			gap: "14px",
 		},
 		card: {
 			background: tokens.surface,
@@ -203,6 +244,15 @@ export const refinedStyles = (
 			overflow: "hidden",
 			position: "relative",
 			transition: "transform 0.15s, box-shadow 0.15s",
+			"&::before": {
+				content: '""',
+				position: "absolute",
+				top: 0,
+				left: 0,
+				right: 0,
+				height: "3px",
+				background: accentSoft,
+			},
 			"&:hover": { transform: "translateY(-1px)", boxShadow: cardShadowHover },
 		},
 		cardRow: {
@@ -210,13 +260,12 @@ export const refinedStyles = (
 			gridTemplateColumns: "1fr auto",
 			alignItems: "center",
 			gap: "16px",
-			p: "16px 20px",
+			p: { xs: "18px 18px 14px", sm: "20px 24px 16px" },
 		},
 		cardLeft: { minWidth: 0 },
 		monitorName: {
 			fontWeight: 600,
-			fontSize: 14,
-			letterSpacing: "-0.005em",
+			fontSize: 15,
 			color: tokens.text,
 			overflow: "hidden",
 			textOverflow: "ellipsis",
@@ -233,12 +282,13 @@ export const refinedStyles = (
 			...pillBase,
 			color: tokens.textMuted,
 			border: `1px solid ${tokens.border}`,
+			background: "#fff",
 		},
 		pillHardware: {
 			...pillBase,
-			color: tokens.up,
-			border: `1px solid ${tokens.border}`,
-			background: tokens.upSoft,
+			color: accent,
+			border: `1px solid ${accentBorder}`,
+			background: accentSoft,
 		},
 		monitorUrl: {
 			fontSize: 12,
@@ -251,9 +301,9 @@ export const refinedStyles = (
 		},
 
 		badge: (tone) => ({
-			fontSize: 11,
-			fontWeight: 600,
-			padding: "4px 10px",
+			fontSize: 12,
+			fontWeight: 700,
+			padding: "6px 12px",
 			borderRadius: "999px",
 			whiteSpace: "nowrap",
 			background: toneSoft(tone, tokens),
@@ -261,14 +311,14 @@ export const refinedStyles = (
 		}),
 
 		heatmap: {
-			padding: "0 20px 16px",
+			padding: { xs: "0 18px 20px", sm: "0 24px 22px" },
 			display: "grid",
 			gridTemplateColumns: `repeat(${MAX_RECENT_CHECKS}, 1fr)`,
-			gap: "3px",
-			height: 42,
+			gap: "4px",
+			height: 44,
 		},
 		heatmapCell: (kind) => ({
-			borderRadius: "2px",
+			borderRadius: "3px",
 			background: heatCellBg[kind],
 			opacity: kind === "empty" ? 0.4 : 1,
 			transition: "transform 0.15s",
@@ -276,22 +326,22 @@ export const refinedStyles = (
 		}),
 
 		histogram: {
-			padding: "0 20px",
+			padding: { xs: "0 18px", sm: "0 24px" },
 			display: "grid",
 			gridTemplateColumns: `repeat(${MAX_RECENT_CHECKS}, 1fr)`,
-			gap: "3px",
+			gap: "4px",
 			alignItems: "flex-end",
-			height: 42,
+			height: 44,
 		},
 		bar: (kind, heightPct) => ({
 			background: barBg[kind],
-			borderRadius: "2px",
+			borderRadius: "3px 3px 0 0",
 			minHeight: 3,
 			opacity: kind === "empty" ? 0.4 : 1,
 			height: `${heightPct}%`,
 		}),
 		chartStats: {
-			padding: "0 20px 16px",
+			padding: { xs: "0 18px 20px", sm: "0 24px 22px" },
 			fontSize: 11,
 			color: tokens.textMuted,
 			fontVariantNumeric: "tabular-nums",

@@ -1,8 +1,10 @@
 services:
   server:
-    image: ghcr.io/bluewave-labs/checkmate-backend-mono-multiarch:latest
+    image: fystack/checkmate-backend-mono-arm:local
+    build:
+      context: ../..
+      dockerfile: docker/dist-arm/server.Dockerfile
     restart: always
-    pull_policy: always
     ports:
       - "52345:52345"
     environment:

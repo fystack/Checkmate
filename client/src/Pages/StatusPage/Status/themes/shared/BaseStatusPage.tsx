@@ -71,7 +71,11 @@ export interface SlotProps<S extends BaseStyles = BaseStyles> {
 }
 
 export interface ThemeConfig<S extends BaseStyles = BaseStyles> {
-	createStyles: (tokens: StatusPageThemeTokens, isDark: boolean) => S;
+	createStyles: (
+		tokens: StatusPageThemeTokens,
+		isDark: boolean,
+		statusPage: StatusPage
+	) => S;
 	HeaderSlot: React.ComponentType<SlotProps<S>>;
 	HeroSlot: React.ComponentType<SlotProps<S>>;
 	overallStatusOptions?: { iconSize?: number; allUpKey?: string };
@@ -87,8 +91,8 @@ export const BaseStatusPage = ({ statusPage, monitors, config }: Props) => {
 	const { t } = useTranslation();
 	const { tokens, mode } = useStatusPageTheme();
 	const styles = useMemo(
-		() => config.createStyles(tokens, mode === "dark"),
-		[config, tokens, mode]
+		() => config.createStyles(tokens, mode === "dark", statusPage),
+		[config, tokens, mode, statusPage]
 	);
 	const [chartMode, setChartMode] = useState<"heatmap" | "histogram">("heatmap");
 
@@ -232,19 +236,6 @@ export const BaseStatusPage = ({ statusPage, monitors, config }: Props) => {
 				})}
 			</Stack>
 
-			<Box
-				component="footer"
-				sx={styles.footer}
-			>
-				{t("pages.statusPages.footer.poweredBy")}{" "}
-				<a
-					href="https://checkmate.so"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					Checkmate
-				</a>
-			</Box>
 		</Box>
 	);
 };

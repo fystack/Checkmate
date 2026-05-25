@@ -2,6 +2,7 @@ import { BasePage, BaseFallback } from "@/Components/design-elements";
 import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
 import Stack from "@mui/material/Stack";
+import { useEffect } from "react";
 
 import { useTheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
@@ -81,6 +82,77 @@ const StatusPageView = () => {
 
 	const statusPage = data?.statusPage;
 	const monitors = data?.monitors ?? [];
+
+	useEffect(() => {
+		if (!isPublic || !statusPage) return;
+
+		const previousTitle = document.title;
+		const title = statusPage.companyName
+			? `${statusPage.companyName} Status`
+			: "Status";
+		document.title = title;
+
+		let favicon = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+		const hadFavicon = Boolean(favicon);
+		const previousFavicon = favicon
+			? {
+					href: favicon.href,
+					rel: favicon.rel,
+					type: favicon.type,
+				}
+			: null;
+
+		if (statusPage.logo?.data) {
+			if (!favicon) {
+				favicon = document.createElement("link");
+				document.head.appendChild(favicon);
+			}
+			favicon.rel = "icon";
+			favicon.type = statusPage.logo.contentType;
+			favicon.href = `data:${statusPage.logo.contentType};base64,${statusPage.logo.data}`;
+		}
+
+		let themeColor = document.querySelector<HTMLMetaElement>(
+			"meta[name='theme-color']"
+		);
+		const hadThemeColor = Boolean(themeColor);
+		const previousThemeColor = themeColor?.content ?? "";
+
+		if (statusPage.color) {
+			if (!themeColor) {
+				themeColor = document.createElement("meta");
+				themeColor.name = "theme-color";
+				document.head.appendChild(themeColor);
+			}
+			themeColor.content = statusPage.color;
+		}
+
+		return () => {
+			document.title = previousTitle;
+			if (favicon) {
+				if (hadFavicon && previousFavicon) {
+					favicon.href = previousFavicon.href;
+					favicon.rel = previousFavicon.rel;
+					favicon.type = previousFavicon.type;
+				} else {
+					favicon.remove();
+				}
+			}
+			if (themeColor) {
+				if (hadThemeColor) {
+					themeColor.content = previousThemeColor;
+				} else {
+					themeColor.remove();
+				}
+			}
+		};
+	}, [
+		isPublic,
+		statusPage?.color,
+		statusPage?.companyName,
+		statusPage?.logo?.contentType,
+		statusPage?.logo?.data,
+	]);
 
 	if (!statusPage) return null;
 
