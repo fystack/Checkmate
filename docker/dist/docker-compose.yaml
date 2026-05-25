@@ -12,7 +12,10 @@ services:
     depends_on:
       - server
   server:
-    image: ghcr.io/bluewave-labs/checkmate-backend:latest
+    image: fystack/checkmate-backend:local
+    build:
+      context: ../..
+      dockerfile: docker/dist/server.Dockerfile
     restart: always
     expose:
       - "52345"
