@@ -334,7 +334,7 @@ export const standardStyles = (
 			display: "grid",
 			gridTemplateColumns: "repeat(90, 1fr)",
 			gap: "2px",
-			height: 32,
+			height: 40,
 		},
 		dailyHeatmapCell: (kind) => {
 			const bg: Record<DailyCellKind, string> = {
@@ -344,10 +344,11 @@ export const standardStyles = (
 				empty: tokens.border,
 			};
 			return {
-				borderRadius: "2px",
+				borderRadius: "3px",
 				background: bg[kind],
-				opacity: kind === "empty" ? 0.35 : 1,
-				"&:hover": { opacity: 0.8, cursor: "default" },
+				opacity: kind === "empty" ? 0.3 : 1,
+				transition: "opacity 0.1s",
+				"&:hover": { opacity: 0.75, cursor: "default" },
 			};
 		},
 

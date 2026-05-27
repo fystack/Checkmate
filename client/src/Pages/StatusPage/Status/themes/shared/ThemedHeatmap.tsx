@@ -19,12 +19,10 @@ interface Props {
 	cellSx: (kind: HeatCellKind) => SxProps<Theme>;
 }
 
+// Color encodes availability status only (not latency).
+// Response time is shown in the tooltip — latency alone never means degraded.
 const classify = (check: CheckSnapshot): Exclude<HeatCellKind, "empty"> => {
-	if (!check.status) return "down";
-	const rt = check.responseTime ?? 0;
-	if (rt > 500) return "slow";
-	if (rt > 250) return "med";
-	return "fast";
+	return check.status ? "fast" : "down";
 };
 
 export const ThemedHeatmap = ({ checks, containerSx, cellSx }: Props) => {

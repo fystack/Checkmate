@@ -53,7 +53,8 @@ export const ThemedDailyHistogram = ({ buckets, days = 90, containerSx, barSx, s
 						return <Box key={cell.date} sx={barSx("empty", MIN_HEIGHT_PCT)} />;
 					}
 					const { bucket } = cell;
-					const kind: BarKind = bucket.uptimeFraction < 0.9 ? "down" : "up";
+					// Mirror ThemedDailyHeatmap thresholds: <95% uptime = outage day
+					const kind: BarKind = bucket.uptimeFraction < 0.95 ? "down" : "up";
 					const height = Math.max(MIN_HEIGHT_PCT, Math.round((bucket.avgResponseTime / maxRt) * 100));
 
 					const tooltipContent = (
