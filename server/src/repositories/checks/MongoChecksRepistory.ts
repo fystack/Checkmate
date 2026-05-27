@@ -386,6 +386,55 @@ class MongoChecksRepository implements IChecksRepository {
 		};
 	};
 
+	findDailyUptimeForMonitors = async (monitorIds: string[], days = 90): Promise<Record<string, import("@/types/index.js").DailyUptimeBucket[]>> => {
+		const objectIds = monitorIds.map((id) => new mongoose.Types.ObjectId(id));
+		const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+		const results = await CheckModel.aggregate([
+			{
+				$match: {
+					"metadata.monitorId": { $in: objectIds },
+					"metadata.type": { $nin: ["hardware", "pagespeed"] },
+					createdAt: { $gte: startDate },
+				},
+			},
+			{
+				$group: {
+					_id: {
+						monitorId: "$metadata.monitorId",
+						date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+					},
+					totalChecks: { $sum: 1 },
+					upChecks: { $sum: { $cond: [{ $eq: ["$status", true] }, 1, 0] } },
+					avgResponseTime: { $avg: "$responseTime" },
+				},
+			},
+			{
+				$project: {
+					_id: 0,
+					monitorId: "$_id.monitorId",
+					date: "$_id.date",
+					totalChecks: 1,
+					avgResponseTime: { $round: ["$avgResponseTime", 0] },
+					uptimeFraction: {
+						$cond: [{ $eq: ["$totalChecks", 0] }, 1, { $divide: ["$upChecks", "$totalChecks"] }],
+					},
+				},
+			},
+		]);
+
+		const map: Record<string, import("@/types/index.js").DailyUptimeBucket[]> = {};
+		for (const row of results) {
+			const id = row.monitorId.toString();
+			if (!map[id]) map[id] = [];
+			map[id].push({ date: row.date, uptimeFraction: row.uptimeFraction, totalChecks: row.totalChecks, avgResponseTime: row.avgResponseTime ?? 0 });
+		}
+		for (const id of Object.keys(map)) {
+			map[id]?.sort((a, b) => a.date.localeCompare(b.date));
+		}
+		return map;
+	};
+
 	deleteByMonitorId = async (monitorId: string): Promise<number> => {
 		const result = await CheckModel.deleteMany({ "metadata.monitorId": new mongoose.Types.ObjectId(monitorId) });
 		return result.deletedCount;

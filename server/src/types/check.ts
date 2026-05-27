@@ -205,3 +205,10 @@ export type NormalizedUptimeCheck<T extends GroupedCheck = GroupedCheck> = T & {
 };
 
 export type CheckSnapshot = Omit<Check, "metadata" | "updatedAt">;
+
+export interface DailyUptimeBucket {
+	date: string; // "YYYY-MM-DD"
+	uptimeFraction: number; // 0–1
+	totalChecks: number;
+	avgResponseTime: number; // ms
+}

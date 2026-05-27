@@ -534,7 +534,7 @@ class MongoMonitorsRepository implements IMonitorsRepository {
 			grpcServiceName: doc.grpcServiceName ?? undefined,
 			strategy: doc.strategy ?? undefined,
 			group: doc.group ?? null,
-			recentChecks: (doc.recentChecks ?? []).map((check: CheckSnapshotDocument) => this.toCheckSnapshot(check)),
+			recentChecks: (((doc as any).checks ?? doc.recentChecks) ?? []).map((check: CheckSnapshotDocument) => this.toCheckSnapshot(check)),
 			geoCheckEnabled: doc.geoCheckEnabled ?? false,
 			geoCheckLocations: doc.geoCheckLocations ?? [],
 			geoCheckInterval: doc.geoCheckInterval ?? 300000,

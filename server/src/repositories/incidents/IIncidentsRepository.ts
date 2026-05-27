@@ -1,4 +1,4 @@
-import type { Incident } from "@/types/index.js";
+import type { Incident, IncidentUpdate } from "@/types/index.js";
 import type { IncidentSummary } from "@/types/index.js";
 export interface IIncidentsRepository {
 	// create
@@ -7,6 +7,8 @@ export interface IIncidentsRepository {
 	findById(incidentId: string, teamId: string): Promise<Incident>;
 	findActiveByIncidentId(incidentId: string, teamId: string): Promise<Incident | null>;
 	findActiveByMonitorId(monitorId: string, teamId: string): Promise<Incident | null>;
+	findRecentByMonitorIds(monitorIds: string[], limit?: number): Promise<Incident[]>;
+	addUpdate(incidentId: string, teamId: string, update: Omit<IncidentUpdate, "id" | "createdAt">): Promise<Incident>;
 	findByTeamId(
 		teamId: string,
 		startDate: Date | undefined,

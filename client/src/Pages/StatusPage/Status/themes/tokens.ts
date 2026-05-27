@@ -191,9 +191,51 @@ const editorial: ThemeVariants = {
 	},
 };
 
+const standard: ThemeVariants = {
+	light: {
+		bg: "#fafafa",
+		surface: "#ffffff",
+		border: "#dedede",
+		text: "#172033",
+		textMuted: "#6f7480",
+		up: "#2ecc71",
+		upStrong: "#1e9f56",
+		upSoft: "rgba(46,204,113,0.14)",
+		degraded: "#c9c51f",
+		degradedSoft: "rgba(201,197,31,0.18)",
+		down: "#d94848",
+		downSoft: "rgba(217,72,72,0.14)",
+		warn: "#c9c51f",
+		warnSoft: "rgba(201,197,31,0.18)",
+		radius: "5px",
+		headingWeight: 800,
+		cardStyle: "hairline",
+	},
+	dark: {
+		bg: "#0c1117",
+		surface: "#111820",
+		border: "#273141",
+		text: "#edf2f8",
+		textMuted: "#9aa5b5",
+		up: "#32d376",
+		upStrong: "#20ad5d",
+		upSoft: "rgba(50,211,118,0.18)",
+		degraded: "#d5cf2a",
+		degradedSoft: "rgba(213,207,42,0.2)",
+		down: "#f06161",
+		downSoft: "rgba(240,97,97,0.18)",
+		warn: "#d5cf2a",
+		warnSoft: "rgba(213,207,42,0.2)",
+		radius: "5px",
+		headingWeight: 800,
+		cardStyle: "hairline",
+	},
+};
+
 export const themeTokens: Record<StatusPageTheme, ThemeVariants> = {
 	refined,
 	modern,
 	bold,
 	editorial,
+	standard,
 };

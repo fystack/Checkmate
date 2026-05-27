@@ -4,7 +4,7 @@ import type { MonitorStatusResponse } from "@/types/network.js";
 import { AppError } from "@/utils/AppError.js";
 import { getDateForRange } from "@/utils/dataUtils.js";
 import type { IIncidentsRepository, IMonitorsRepository, IUsersRepository } from "@/repositories/index.js";
-import type { Incident, IncidentSummary, User } from "@/types/index.js";
+import type { Incident, IncidentSummary, IncidentUpdate, IncidentUpdateStatus, User } from "@/types/index.js";
 import type { MonitorActionDecision } from "@/service/infrastructure/SuperSimpleQueue/SuperSimpleQueueHelper.js";
 import type { INotificationMessageBuilder } from "@/service/infrastructure/notificationMessageBuilder.js";
 import type { ILogger } from "@/utils/logger.js";
@@ -29,6 +29,7 @@ export interface IIncidentService {
 	): Promise<{ incidents: Incident[]; count: number }>;
 	getIncidentSummary(teamId: string, limit?: number): Promise<IncidentSummary>;
 	getIncidentById(incidentId: string, teamId: string): Promise<{ incident: Incident; monitor: Monitor; user: User | null }>;
+	postIncidentUpdate(incidentId: string, teamId: string, userEmail: string, status: IncidentUpdateStatus, message: string): Promise<Incident>;
 }
 
 export class IncidentService implements IIncidentService {
@@ -259,5 +260,19 @@ export class IncidentService implements IIncidentService {
 			});
 			throw error;
 		}
+	};
+
+	postIncidentUpdate = async (
+		incidentId: string,
+		teamId: string,
+		userEmail: string,
+		status: IncidentUpdateStatus,
+		message: string
+	): Promise<Incident> => {
+		return this.incidentsRepository.addUpdate(incidentId, teamId, {
+			status,
+			message,
+			postedBy: userEmail,
+		});
 	};
 }

@@ -256,3 +256,10 @@ export type NormalizedCheck<T extends HasResponseTime = Check> = T & {
 export type NormalizedUptimeCheck<T extends GroupedCheck = GroupedCheck> = T & {
 	originalAvgResponseTime: number;
 };
+
+export interface DailyUptimeBucket {
+	date: string; // "YYYY-MM-DD"
+	uptimeFraction: number; // 0–1
+	totalChecks: number;
+	avgResponseTime: number; // ms
+}

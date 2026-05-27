@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { booleanCoercion } from "./shared.js";
+import { IncidentUpdateStatuses } from "@/types/incident.js";
 
 //****************************************
 // Incident Validations
@@ -17,4 +18,9 @@ export const getIncidentsByTeamQueryValidation = z.object({
 
 export const getIncidentSummaryQueryValidation = z.object({
 	limit: z.coerce.number().int().min(1).optional(),
+});
+
+export const postIncidentUpdateBodyValidation = z.object({
+	status: z.enum([...IncidentUpdateStatuses] as [string, ...string[]]),
+	message: z.string().min(1).max(2000),
 });

@@ -2,6 +2,7 @@ import type {
 	Check,
 	ChecksQueryResult,
 	ChecksSummary,
+	DailyUptimeBucket,
 	MonitorType,
 	PageSpeedChecksResult,
 	HardwareChecksResult,
@@ -42,6 +43,7 @@ export interface IChecksRepository {
 		options?: { type?: MonitorType }
 	): Promise<UptimeChecksResult | HardwareChecksResult | PageSpeedChecksResult>;
 	findSummaryByTeamId(teamId: string, dateRange: string): Promise<ChecksSummary>;
+	findDailyUptimeForMonitors(monitorIds: string[], days?: number): Promise<Record<string, DailyUptimeBucket[]>>;
 	// update
 	//delete
 	deleteByMonitorId(monitorId: string): Promise<number>;

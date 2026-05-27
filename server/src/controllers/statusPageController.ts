@@ -9,9 +9,10 @@ import {
 import { AppError } from "@/utils/AppError.js";
 import { requireTeamId, requireUserId } from "@/controllers/controllerUtils.js";
 import { IStatusPageService } from "@/service/business/statusPageService.js";
-import { IMonitorsRepository } from "@/repositories/index.js";
+import { IMonitorsRepository, IIncidentsRepository, IChecksRepository } from "@/repositories/index.js";
 import { ISettingsService } from "@/service/system/settingsService.js";
 import { NormalizeData } from "@/utils/dataUtils.js";
+import { MAX_RECENT_CHECKS } from "@/types/monitor.js";
 
 const SERVICE_NAME = "statusPageController";
 
@@ -28,10 +29,14 @@ class StatusPageController implements IStatusPageController {
 	static SERVICE_NAME = SERVICE_NAME;
 	private statusPageService: IStatusPageService;
 	private monitorsRepository: IMonitorsRepository;
+	private incidentsRepository: IIncidentsRepository;
+	private checksRepository: IChecksRepository;
 	private settingsService: ISettingsService;
-	constructor(statusPageService: IStatusPageService, monitorsRepository: IMonitorsRepository, settingsService: ISettingsService) {
+	constructor(statusPageService: IStatusPageService, monitorsRepository: IMonitorsRepository, incidentsRepository: IIncidentsRepository, checksRepository: IChecksRepository, settingsService: ISettingsService) {
 		this.statusPageService = statusPageService;
 		this.monitorsRepository = monitorsRepository;
+		this.incidentsRepository = incidentsRepository;
+		this.checksRepository = checksRepository;
 		this.settingsService = settingsService;
 	}
 
@@ -107,7 +112,12 @@ class StatusPageController implements IStatusPageController {
 			const settings = await this.settingsService.getDBSettings();
 			const showURL = settings.showURL;
 
-			const monitors = await this.monitorsRepository.findByIds(statusPage.monitors);
+			const [monitors, dailyUptimeMap, incidents] = await Promise.all([
+				this.monitorsRepository.findByIdsWithChecks(statusPage.monitors, MAX_RECENT_CHECKS),
+				this.checksRepository.findDailyUptimeForMonitors(statusPage.monitors, 90),
+				this.incidentsRepository.findRecentByMonitorIds(statusPage.monitors, 20),
+			]);
+
 			// Sort monitors according to the order in statusPage.monitors
 			const monitorOrder = new Map(statusPage.monitors.map((id, index) => [id, index]));
 			const sortedMonitors = [...monitors].sort((a, b) => {
@@ -117,20 +127,23 @@ class StatusPageController implements IStatusPageController {
 			});
 
 			const normalizedMonitors = sortedMonitors.map((monitor) => {
-				const normalizedChecks = NormalizeData(monitor.recentChecks, 10, 100);
+				const recentChecks = NormalizeData(monitor.recentChecks, 10, 100);
+				const dailyHeatmap = dailyUptimeMap[monitor.id] ?? [];
 				if (!showURL) {
 					// eslint-disable-next-line @typescript-eslint/no-unused-vars
 					const { url, port, secret, notifications, ...rest } = monitor;
-					return { ...rest, checks: normalizedChecks };
+					return { ...rest, recentChecks, dailyHeatmap };
 				}
-				return { ...monitor, checks: normalizedChecks };
+				return { ...monitor, recentChecks, dailyHeatmap };
 			});
+
 			return res.status(200).json({
 				success: true,
 				msg: "Status page retrieved successfully",
 				data: {
 					statusPage,
 					monitors: normalizedMonitors,
+					incidents,
 				},
 			});
 		} catch (error) {

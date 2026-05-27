@@ -1388,7 +1388,9 @@
 					"avg": "avg {{value}}ms",
 					"max": "max {{value}}ms",
 					"downTooltip": "Down",
-					"heatmapAria": "Response time heatmap"
+					"heatmapAria": "Response time heatmap",
+					"daysAgo": "{{count}} days ago",
+					"today": "Today"
 				},
 				"infrastructure": {
 					"title": "Infrastructure",
@@ -1403,6 +1405,24 @@
 				"uptime": {
 					"title": "Uptime",
 					"responseTime": "Response time"
+				},
+				"incidents": {
+					"title": "Incident History",
+					"pastTitle": "Past Incidents",
+					"noIncidents": "No incidents in the past 30 days",
+					"noIncidentsToday": "No incidents reported today.",
+					"noIncidentsOnDay": "No incidents reported.",
+					"ongoing": "Ongoing",
+					"resolved": "Resolved",
+					"duration": "Duration: {{value}}",
+					"resolvedAt": "Resolved",
+					"timestampUtc": "{{value}} UTC",
+					"updateStatus": {
+						"investigating": "Investigating",
+						"identified": "Identified",
+						"monitoring": "Monitoring",
+						"resolved": "Resolved"
+					}
 				}
 			},
 			"statusBar": {
@@ -1523,6 +1543,10 @@
 						"editorial": {
 							"name": "Editorial",
 							"description": "Serif headings and hairline dividers. Distinctive and calm."
+						},
+						"standard": {
+							"name": "Standard",
+							"description": "Statuspage-inspired layout with a bold operational banner and compact uptime rows."
 						}
 					}
 				},

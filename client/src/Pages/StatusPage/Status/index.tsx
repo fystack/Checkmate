@@ -34,6 +34,10 @@ import { BoldHero } from "@/Pages/StatusPage/Status/themes/bold/BoldHero";
 import { editorialStyles } from "@/Pages/StatusPage/Status/themes/editorial/styles";
 import { EditorialHeader } from "@/Pages/StatusPage/Status/themes/editorial/EditorialHeader";
 import { EditorialHero } from "@/Pages/StatusPage/Status/themes/editorial/EditorialHero";
+import { standardStyles } from "@/Pages/StatusPage/Status/themes/standard/styles";
+import { StandardHeader } from "@/Pages/StatusPage/Status/themes/standard/StandardHeader";
+import { StandardHero } from "@/Pages/StatusPage/Status/themes/standard/StandardHero";
+import { StandardIncidentHistory } from "@/Pages/StatusPage/Status/themes/standard/StandardIncidentHistory";
 
 const THEME_CONFIGS: Record<StatusPageTheme, ThemeConfig<any>> = {
 	refined: {
@@ -58,6 +62,13 @@ const THEME_CONFIGS: Record<StatusPageTheme, ThemeConfig<any>> = {
 		HeaderSlot: EditorialHeader,
 		HeroSlot: EditorialHero,
 		overallStatusOptions: { allUpKey: "pages.statusPages.editorial.allUp" },
+	},
+	standard: {
+		createStyles: standardStyles,
+		HeaderSlot: StandardHeader,
+		HeroSlot: StandardHero,
+		IncidentHistorySlot: StandardIncidentHistory,
+		overallStatusOptions: { iconSize: 22 },
 	},
 };
 
@@ -105,6 +116,7 @@ const StatusPageView = () => {
 
 	const statusPage = data?.statusPage;
 	const monitors = data?.monitors ?? [];
+	const incidents = data?.incidents ?? [];
 
 	useEffect(() => {
 		if (!isPublic || !statusPage) return;
@@ -211,6 +223,7 @@ const StatusPageView = () => {
 		<BaseStatusPage
 			statusPage={statusPage}
 			monitors={monitors}
+			incidents={incidents}
 			config={themeConfig}
 		/>
 	);

@@ -1,6 +1,6 @@
 import { IncidentModel } from "@/db/models/index.js";
 import type { IncidentDocument } from "@/db/models/Incident.js";
-import type { Incident, IncidentSummary } from "@/types/index.js";
+import type { Incident, IncidentSummary, IncidentUpdate, IncidentUpdateStatus } from "@/types/index.js";
 import type { IIncidentsRepository } from "@/repositories/index.js";
 import mongoose from "mongoose";
 import { AppError } from "@/utils/AppError.js";
@@ -49,6 +49,7 @@ class MongoIncidentsRepository implements IIncidentsRepository {
 	protected toEntity = (doc: IncidentDocument): Incident => {
 		return {
 			id: this.toStringId(doc._id),
+			code: doc.code,
 			monitorId: this.toStringId(doc.monitorId),
 			teamId: this.toStringId(doc.teamId),
 			startTime: this.toDateString(doc.startTime),
@@ -60,9 +61,28 @@ class MongoIncidentsRepository implements IIncidentsRepository {
 			resolvedBy: doc.resolvedBy ? this.toStringId(doc.resolvedBy) : null,
 			resolvedByEmail: doc.resolvedByEmail ?? null,
 			comment: doc.comment ?? null,
+			updates: (doc.updates ?? []).map((u) => ({
+				id: u._id.toString(),
+				status: u.status,
+				message: u.message,
+				postedBy: u.postedBy,
+				createdAt: this.toDateString(u.createdAt),
+			})),
 			createdAt: this.toDateString(doc.createdAt),
 			updatedAt: this.toDateString(doc.updatedAt),
 		};
+	};
+
+	addUpdate = async (incidentId: string, teamId: string, update: Omit<IncidentUpdate, "id" | "createdAt">): Promise<Incident> => {
+		const updated = await IncidentModel.findOneAndUpdate(
+			{ _id: new mongoose.Types.ObjectId(incidentId), teamId: new mongoose.Types.ObjectId(teamId) },
+			{ $push: { updates: { status: update.status, message: update.message, postedBy: update.postedBy, createdAt: new Date() } } },
+			{ new: true, runValidators: true }
+		);
+		if (!updated) {
+			throw new AppError({ message: `Incident ${incidentId} not found`, status: 404 });
+		}
+		return this.toEntity(updated);
 	};
 
 	protected mapDocuments = (documents: IncidentDocument[] | IncidentDocument | null): Incident[] => {
@@ -101,6 +121,14 @@ class MongoIncidentsRepository implements IIncidentsRepository {
 			return null;
 		}
 		return this.toEntity(incident);
+	};
+
+	findRecentByMonitorIds = async (monitorIds: string[], limit = 10): Promise<Incident[]> => {
+		const objectIds = monitorIds.map((id) => new mongoose.Types.ObjectId(id));
+		const incidents = await IncidentModel.find({ monitorId: { $in: objectIds } })
+			.sort({ startTime: -1 })
+			.limit(limit);
+		return this.mapDocuments(incidents);
 	};
 
 	findActiveByMonitorId = async (monitorId: string, teamId: string): Promise<Incident | null> => {

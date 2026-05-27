@@ -156,6 +156,11 @@
 						"type": "string",
 						"example": "65f1c2a4d8b9e0123456789c"
 					},
+					"code": {
+						"type": "string",
+						"description": "Public, short, copy-paste-friendly incident code (status.io / Atlassian style).",
+						"example": "FB520U"
+					},
 					"monitorId": {
 						"type": "string",
 						"example": "65f1c2a4d8b9e0123456789a"
@@ -215,7 +220,7 @@
 						"example": "2026-04-15T03:34:00.000Z"
 					}
 				},
-				"required": ["id", "monitorId", "teamId", "startTime", "endTime", "status", "resolutionType", "createdAt", "updatedAt"],
+				"required": ["id", "code", "monitorId", "teamId", "startTime", "endTime", "status", "resolutionType", "createdAt", "updatedAt"],
 				"additionalProperties": {
 					"nullable": true
 				}
@@ -10370,7 +10375,7 @@
 									},
 									"theme": {
 										"type": "string",
-										"enum": ["refined", "modern", "bold", "editorial"]
+										"enum": ["refined", "modern", "bold", "editorial", "standard"]
 									},
 									"themeMode": {
 										"type": "string",
@@ -10573,7 +10578,7 @@
 									},
 									"theme": {
 										"type": "string",
-										"enum": ["refined", "modern", "bold", "editorial"]
+										"enum": ["refined", "modern", "bold", "editorial", "standard"]
 									},
 									"themeMode": {
 										"type": "string",

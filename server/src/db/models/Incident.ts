@@ -1,12 +1,19 @@
 import { Schema, model, type Types } from "mongoose";
-import { IncidentResolutionTypes, type Incident } from "@/types/incident.js";
+import { IncidentResolutionTypes, IncidentUpdateStatuses, type Incident, type IncidentUpdate } from "@/types/incident.js";
 
-type IncidentDocumentBase = Omit<Incident, "id" | "monitorId" | "teamId" | "resolvedBy" | "startTime" | "endTime" | "createdAt" | "updatedAt"> & {
+type IncidentUpdateDocument = Omit<IncidentUpdate, "id" | "createdAt"> & {
+	_id: Types.ObjectId;
+	createdAt: Date;
+};
+
+type IncidentDocumentBase = Omit<Incident, "id" | "code" | "monitorId" | "teamId" | "resolvedBy" | "startTime" | "endTime" | "updates" | "createdAt" | "updatedAt"> & {
+	code: string;
 	monitorId: Types.ObjectId;
 	teamId: Types.ObjectId;
 	resolvedBy?: Types.ObjectId | null;
 	startTime: Date;
 	endTime: Date | null;
+	updates: IncidentUpdateDocument[];
 	createdAt: Date;
 	updatedAt: Date;
 };
@@ -15,8 +22,39 @@ export interface IncidentDocument extends IncidentDocumentBase {
 	_id: Types.ObjectId;
 }
 
+const IncidentUpdateSchema = new Schema<IncidentUpdateDocument>(
+	{
+		status: { type: String, enum: IncidentUpdateStatuses, required: true },
+		message: { type: String, required: true },
+		postedBy: { type: String, required: true },
+		createdAt: { type: Date, default: Date.now, immutable: true },
+	},
+	{ _id: true, timestamps: false }
+);
+
+// Status.io / Atlassian-style 6-character public code (e.g. "FB520U").
+// Unambiguous alphabet: skips 0/O/1/I to avoid copy-paste confusion.
+const INCIDENT_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const INCIDENT_CODE_LENGTH = 6;
+
+const generateIncidentCode = (): string => {
+	let code = "";
+	for (let i = 0; i < INCIDENT_CODE_LENGTH; i++) {
+		code += INCIDENT_CODE_ALPHABET.charAt(Math.floor(Math.random() * INCIDENT_CODE_ALPHABET.length));
+	}
+	return code;
+};
+
 const IncidentSchema = new Schema<IncidentDocument>(
 	{
+		code: {
+			type: String,
+			required: true,
+			unique: true,
+			immutable: true,
+			default: generateIncidentCode,
+			index: true,
+		},
 		monitorId: {
 			type: Schema.Types.ObjectId,
 			ref: "Monitor",
@@ -71,6 +109,10 @@ const IncidentSchema = new Schema<IncidentDocument>(
 		comment: {
 			type: String,
 			default: null,
+		},
+		updates: {
+			type: [IncidentUpdateSchema],
+			default: [],
 		},
 	},
 	{ timestamps: true }

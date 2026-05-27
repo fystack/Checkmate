@@ -3,8 +3,20 @@
 export const IncidentResolutionTypes = ["automatic", "manual", null] as const;
 export type IncidentResolutionType = (typeof IncidentResolutionTypes)[number];
 
+export const IncidentUpdateStatuses = ["investigating", "identified", "monitoring", "resolved"] as const;
+export type IncidentUpdateStatus = (typeof IncidentUpdateStatuses)[number];
+
+export interface IncidentUpdate {
+	id: string;
+	status: IncidentUpdateStatus;
+	message: string;
+	postedBy: string;
+	createdAt: string;
+}
+
 export interface Incident {
 	id: string;
+	code: string;
 	monitorId: string;
 	teamId: string;
 	startTime: string;
@@ -16,6 +28,7 @@ export interface Incident {
 	resolvedBy?: string | null;
 	resolvedByEmail?: string | null;
 	comment?: string | null;
+	updates: IncidentUpdate[];
 	createdAt: string;
 	updatedAt: string;
 }

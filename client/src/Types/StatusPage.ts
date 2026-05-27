@@ -1,4 +1,5 @@
 import type { Monitor, MonitorType } from "@/Types/Monitor";
+import type { Incident } from "@/Types/Incident";
 export type MonitorDisplayType = "uptime" | "infrastructure";
 
 export const MONITOR_TYPE_KEYS: Partial<Record<MonitorType, string>> = {
@@ -21,7 +22,13 @@ export const getMonitorTypeLabel = (
 	return key ? t(key) : type;
 };
 
-export const STATUS_PAGE_THEMES = ["refined", "modern", "bold", "editorial"] as const;
+export const STATUS_PAGE_THEMES = [
+	"refined",
+	"modern",
+	"bold",
+	"editorial",
+	"standard",
+] as const;
 export type StatusPageTheme = (typeof STATUS_PAGE_THEMES)[number];
 export const DEFAULT_STATUS_PAGE_THEME: StatusPageTheme = "refined";
 
@@ -71,4 +78,5 @@ export interface StatusPage {
 export interface StatusPageResponse {
 	statusPage: StatusPage;
 	monitors: Monitor[];
+	incidents: Incident[];
 }

@@ -2,7 +2,8 @@ import { AppError } from "@/utils/AppError.js";
 import { Request, Response, NextFunction } from "express";
 import { requireTeamId, requireUserId, requireUserEmail, extractString } from "./controllerUtils.js";
 import { IIncidentService } from "@/service/index.js";
-import { getIncidentsByTeamQueryValidation, getIncidentSummaryQueryValidation } from "@/validation/incidentValidation.js";
+import { getIncidentsByTeamQueryValidation, getIncidentSummaryQueryValidation, postIncidentUpdateBodyValidation } from "@/validation/incidentValidation.js";
+import type { IncidentUpdateStatus } from "@/types/incident.js";
 
 const SERVICE_NAME = "IncidentController";
 
@@ -11,6 +12,7 @@ export interface IIncidentController {
 	getIncidentSummary: (req: Request, res: Response, next: NextFunction) => Promise<Response | void>;
 	getIncidentById: (req: Request, res: Response, next: NextFunction) => Promise<Response | void>;
 	resolveIncidentManually: (req: Request, res: Response, next: NextFunction) => Promise<Response | void>;
+	postIncidentUpdate: (req: Request, res: Response, next: NextFunction) => Promise<Response | void>;
 }
 class IncidentController implements IIncidentController {
 	private incidentService: IIncidentService;
@@ -97,6 +99,26 @@ class IncidentController implements IIncidentController {
 				success: true,
 				msg: "Incident resolved successfully",
 				data: resolvedIncident,
+			});
+		} catch (error) {
+			next(error);
+		}
+	};
+
+	postIncidentUpdate = async (req: Request, res: Response, next: NextFunction) => {
+		try {
+			const teamId = requireTeamId(req.user?.teamId);
+			const userEmail = requireUserEmail(req.user?.email);
+			const incidentId = extractString(req.params?.incidentId);
+			if (!incidentId) {
+				throw new AppError({ message: "Incident ID is required", service: SERVICE_NAME, status: 400 });
+			}
+			const { status, message } = postIncidentUpdateBodyValidation.parse(req.body);
+			const incident = await this.incidentService.postIncidentUpdate(incidentId, teamId, userEmail, status as IncidentUpdateStatus, message);
+			return res.status(200).json({
+				success: true,
+				msg: "Incident update posted successfully",
+				data: incident,
 			});
 		} catch (error) {
 			next(error);
