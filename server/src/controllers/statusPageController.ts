@@ -12,9 +12,23 @@ import { IStatusPageService } from "@/service/business/statusPageService.js";
 import { IMonitorsRepository, IIncidentsRepository, IChecksRepository } from "@/repositories/index.js";
 import { ISettingsService } from "@/service/system/settingsService.js";
 import { NormalizeData } from "@/utils/dataUtils.js";
-import { MAX_RECENT_CHECKS } from "@/types/monitor.js";
+import type { DailyUptimeBucket, Monitor, StatusPage } from "@/types/index.js";
 
 const SERVICE_NAME = "statusPageController";
+
+type PublicStatusPageData = {
+	statusPage: StatusPage;
+	monitors: PublicStatusPageMonitor[];
+	incidents: Awaited<ReturnType<IIncidentsRepository["findRecentByMonitorIds"]>>;
+};
+
+type PublicStatusPageMonitor = Omit<Monitor, "url" | "port" | "secret" | "notifications"> & {
+	url?: string;
+	port?: number;
+	secret?: string;
+	notifications?: string[];
+	dailyHeatmap: DailyUptimeBucket[];
+};
 
 export interface IStatusPageController {
 	readonly serviceName: string;
@@ -32,7 +46,13 @@ class StatusPageController implements IStatusPageController {
 	private incidentsRepository: IIncidentsRepository;
 	private checksRepository: IChecksRepository;
 	private settingsService: ISettingsService;
-	constructor(statusPageService: IStatusPageService, monitorsRepository: IMonitorsRepository, incidentsRepository: IIncidentsRepository, checksRepository: IChecksRepository, settingsService: ISettingsService) {
+	constructor(
+		statusPageService: IStatusPageService,
+		monitorsRepository: IMonitorsRepository,
+		incidentsRepository: IIncidentsRepository,
+		checksRepository: IChecksRepository,
+		settingsService: ISettingsService
+	) {
 		this.statusPageService = statusPageService;
 		this.monitorsRepository = monitorsRepository;
 		this.incidentsRepository = incidentsRepository;
@@ -43,6 +63,35 @@ class StatusPageController implements IStatusPageController {
 	get serviceName() {
 		return StatusPageController.SERVICE_NAME;
 	}
+
+	private buildPublicStatusPageData = async (statusPage: StatusPage, showURL: boolean): Promise<PublicStatusPageData> => {
+		const [monitors, dailyUptimeMap, incidents] = await Promise.all([
+			this.monitorsRepository.findByIdsWithChecks(statusPage.monitors),
+			this.checksRepository.findDailyUptimeForMonitors(statusPage.monitors, 90),
+			this.incidentsRepository.findRecentByMonitorIds(statusPage.monitors, 20),
+		]);
+
+		// Sort monitors according to the order in statusPage.monitors
+		const monitorOrder = new Map(statusPage.monitors.map((id, index) => [id, index]));
+		const sortedMonitors = [...monitors].sort((a, b) => {
+			const orderA = monitorOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+			const orderB = monitorOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+			return orderA - orderB;
+		});
+
+		const normalizedMonitors = sortedMonitors.map((monitor) => {
+			const recentChecks = NormalizeData(monitor.recentChecks, 10, 100);
+			const dailyHeatmap = dailyUptimeMap[monitor.id] ?? [];
+			if (!showURL) {
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				const { url, port, secret, notifications, ...rest } = monitor;
+				return { ...rest, recentChecks, dailyHeatmap };
+			}
+			return { ...monitor, recentChecks, dailyHeatmap };
+		});
+
+		return { statusPage, monitors: normalizedMonitors, incidents };
+	};
 
 	createStatusPage = async (req: Request, res: Response, next: NextFunction) => {
 		try {
@@ -112,39 +161,12 @@ class StatusPageController implements IStatusPageController {
 			const settings = await this.settingsService.getDBSettings();
 			const showURL = settings.showURL;
 
-			const [monitors, dailyUptimeMap, incidents] = await Promise.all([
-				this.monitorsRepository.findByIdsWithChecks(statusPage.monitors, MAX_RECENT_CHECKS),
-				this.checksRepository.findDailyUptimeForMonitors(statusPage.monitors, 90),
-				this.incidentsRepository.findRecentByMonitorIds(statusPage.monitors, 20),
-			]);
-
-			// Sort monitors according to the order in statusPage.monitors
-			const monitorOrder = new Map(statusPage.monitors.map((id, index) => [id, index]));
-			const sortedMonitors = [...monitors].sort((a, b) => {
-				const orderA = monitorOrder.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-				const orderB = monitorOrder.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-				return orderA - orderB;
-			});
-
-			const normalizedMonitors = sortedMonitors.map((monitor) => {
-				const recentChecks = NormalizeData(monitor.recentChecks, 10, 100);
-				const dailyHeatmap = dailyUptimeMap[monitor.id] ?? [];
-				if (!showURL) {
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					const { url, port, secret, notifications, ...rest } = monitor;
-					return { ...rest, recentChecks, dailyHeatmap };
-				}
-				return { ...monitor, recentChecks, dailyHeatmap };
-			});
+			const data = await this.buildPublicStatusPageData(statusPage, showURL);
 
 			return res.status(200).json({
 				success: true,
 				msg: "Status page retrieved successfully",
-				data: {
-					statusPage,
-					monitors: normalizedMonitors,
-					incidents,
-				},
+				data,
 			});
 		} catch (error) {
 			next(error);

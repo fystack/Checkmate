@@ -17,8 +17,10 @@ import { CheckModel, type CheckDocument } from "@/db/models/index.js";
 import mongoose from "mongoose";
 import { getDateForRange } from "@/utils/dataUtils.js";
 import { ILogger } from "@/utils/logger.js";
+import { UptimeDetailsSupportedTypes } from "@/types/monitor.js";
 
 const SERVICE_NAME = "StatusService";
+const STATUS_PAGE_UPTIME_MONITOR_TYPES = [...UptimeDetailsSupportedTypes, "unknown"] as const;
 
 export type LatestChecksMap = Record<string, Check[]>;
 type DateRange = { start: Date; end: Date };
@@ -394,7 +396,9 @@ class MongoChecksRepository implements IChecksRepository {
 			{
 				$match: {
 					"metadata.monitorId": { $in: objectIds },
-					"metadata.type": { $nin: ["hardware", "pagespeed"] },
+					// Use an explicit allow-list so MongoDB can use the compound
+					// monitor/type/date index instead of scanning every monitor type.
+					"metadata.type": { $in: STATUS_PAGE_UPTIME_MONITOR_TYPES },
 					createdAt: { $gte: startDate },
 				},
 			},

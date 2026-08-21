@@ -91,7 +91,7 @@ class MongoMonitorsRepository implements IMonitorsRepository {
 		return this.mapDocuments(monitors);
 	};
 
-	findByIdsWithChecks = async (monitorIds: string[], checksCount: number = 25): Promise<Monitor[]> => {
+	findByIdsWithChecks = async (monitorIds: string[]): Promise<Monitor[]> => {
 		if (!monitorIds.length) {
 			return [];
 		}
@@ -102,22 +102,6 @@ class MongoMonitorsRepository implements IMonitorsRepository {
 			{ $match: { _id: { $in: objectIds } } },
 			{
 				$lookup: {
-					from: "checks",
-					let: { monitorId: "$_id" },
-					pipeline: [{ $match: { $expr: { $eq: ["$metadata.monitorId", "$$monitorId"] } } }, { $sort: { createdAt: -1 } }, { $limit: checksCount }],
-					as: "checks",
-				},
-			},
-			{
-				$lookup: {
-					from: "maintenancewindows",
-					let: { monitorId: "$_id" },
-					pipeline: [{ $match: { $expr: { $in: ["$$monitorId", { $ifNull: ["$monitorIds", []] }] } } }],
-					as: "maintenanceWindows",
-				},
-			},
-			{
-				$lookup: {
 					from: "monitorstats",
 					localField: "_id",
 					foreignField: "monitorId",
@@ -126,26 +110,11 @@ class MongoMonitorsRepository implements IMonitorsRepository {
 			},
 			{
 				$addFields: {
-					isMaintenance: {
-						$reduce: {
-							input: "$maintenanceWindows",
-							initialValue: false,
-							in: {
-								$or: [
-									"$$value",
-									{
-										$and: [{ $eq: ["$$this.active", true] }, { $lte: ["$$this.start", "$$NOW"] }, { $gte: ["$$this.end", "$$NOW"] }],
-									},
-								],
-							},
-						},
-					},
 					uptimePercentage: { $arrayElemAt: ["$stats.uptimePercentage", 0] },
 				},
 			},
 			{
 				$project: {
-					maintenanceWindows: 0,
 					stats: 0,
 				},
 			},
@@ -482,6 +451,7 @@ class MongoMonitorsRepository implements IMonitorsRepository {
 	};
 
 	private toEntityWithChecks = (doc: MonitorDocument): Monitor => {
+		const docWithChecks = doc as MonitorDocument & { checks?: CheckSnapshotDocument[] };
 		const toStringId = (value: unknown): string => {
 			if (value instanceof mongoose.Types.ObjectId) {
 				return value.toString();
@@ -534,7 +504,7 @@ class MongoMonitorsRepository implements IMonitorsRepository {
 			grpcServiceName: doc.grpcServiceName ?? undefined,
 			strategy: doc.strategy ?? undefined,
 			group: doc.group ?? null,
-			recentChecks: (((doc as any).checks ?? doc.recentChecks) ?? []).map((check: CheckSnapshotDocument) => this.toCheckSnapshot(check)),
+			recentChecks: (docWithChecks.checks ?? doc.recentChecks ?? []).map((check: CheckSnapshotDocument) => this.toCheckSnapshot(check)),
 			geoCheckEnabled: doc.geoCheckEnabled ?? false,
 			geoCheckLocations: doc.geoCheckLocations ?? [],
 			geoCheckInterval: doc.geoCheckInterval ?? 300000,

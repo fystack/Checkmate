@@ -6,7 +6,10 @@ type IncidentUpdateDocument = Omit<IncidentUpdate, "id" | "createdAt"> & {
 	createdAt: Date;
 };
 
-type IncidentDocumentBase = Omit<Incident, "id" | "code" | "monitorId" | "teamId" | "resolvedBy" | "startTime" | "endTime" | "updates" | "createdAt" | "updatedAt"> & {
+type IncidentDocumentBase = Omit<
+	Incident,
+	"id" | "code" | "monitorId" | "teamId" | "resolvedBy" | "startTime" | "endTime" | "updates" | "createdAt" | "updatedAt"
+> & {
 	code: string;
 	monitorId: Types.ObjectId;
 	teamId: Types.ObjectId;
@@ -119,6 +122,7 @@ const IncidentSchema = new Schema<IncidentDocument>(
 );
 
 IncidentSchema.index({ monitorId: 1, status: 1 });
+IncidentSchema.index({ monitorId: 1, startTime: -1 });
 IncidentSchema.index({ teamId: 1, status: 1 });
 IncidentSchema.index({ teamId: 1, startTime: -1 });
 IncidentSchema.index({ status: 1, startTime: -1 });

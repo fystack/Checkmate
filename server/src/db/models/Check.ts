@@ -285,6 +285,9 @@ CheckSchema.index({ "metadata.monitorId": 1, createdAt: 1 });
 CheckSchema.index({ createdAt: 1 });
 CheckSchema.index({ "metadata.teamId": 1, createdAt: -1 });
 CheckSchema.index({ "metadata.monitorId": 1, "metadata.type": 1, createdAt: -1 });
+// Covers the 90-day public status-page aggregation, which groups by check state
+// and response time after filtering by monitor, type, and date.
+CheckSchema.index({ "metadata.monitorId": 1, "metadata.type": 1, createdAt: -1, status: 1, responseTime: 1 });
 CheckSchema.index({ "metadata.teamId": 1, status: 1, createdAt: -1 });
 
 const CheckModel = model<CheckDocument>("Check", CheckSchema);

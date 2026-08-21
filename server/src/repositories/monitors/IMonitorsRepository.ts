@@ -27,7 +27,7 @@ export interface IMonitorsRepository {
 	findAll(): Promise<Monitor[] | null>;
 	findByTeamId(teamId: string, config: TeamQueryConfig): Promise<Monitor[] | null>;
 	findByIds(monitorIds: string[]): Promise<Monitor[]>;
-	findByIdsWithChecks(monitorIds: string[], checksCount?: number): Promise<Monitor[]>;
+	findByIdsWithChecks(monitorIds: string[]): Promise<Monitor[]>;
 
 	// update
 	updateById(monitorId: string, teamId: string, updates: Partial<Monitor>): Promise<Monitor>;
